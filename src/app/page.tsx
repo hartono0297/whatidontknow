@@ -1,65 +1,227 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const LOADING_TEXTS = [
+  "Fetching what's trending...",
+  "Running AI analysis...",
+  "Synthesizing global data...",
+  "Just a moment...",
+];
+
+type NewsData = {
+  title: string;
+  summary: string;
+  source_url: string;
+};
 
 export default function Home() {
+  const [news, setNews] = useState<NewsData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [region, setRegion] = useState<'local' | 'global'>('local');
+
+  const fetchViralNews = async () => {
+    setLoading(true);
+    setError(null);
+    // We intentionally don't clear the old news instantly, so it can crossfade out smoothly.
+
+    try {
+      const response = await fetch(`/api/get-viral-news?region=${region}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data && data.title && data.summary) {
+          setNews(data);
+          return;
+        }
+        throw new Error(data.error || "Failed to fetch data from source.");
+      }
+
+      setNews(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen text-neutral-200 flex flex-col items-center justify-center p-6 sm:p-12 font-sans relative overflow-hidden selection:bg-white/20">
+
+      {/* Top Navbar Area */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="absolute top-8 left-0 right-0 px-8 flex justify-between items-center max-w-5xl mx-auto w-full z-20"
+      >
+        <div className="flex items-center gap-2">
+          {/* Minimalist Logo */}
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
+          <span className="text-xl font-medium tracking-tighter text-white">pulse.</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 backdrop-blur-md">
+          <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+          <span className="text-xs font-medium tracking-wide text-neutral-400 uppercase">System Online</span>
+        </div>
+      </motion.div>
+
+      <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-12 z-10 pt-16">
+
+        {/* Header Section */}
+        <div className="text-center flex flex-col items-center gap-4">
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="text-5xl md:text-7xl font-semibold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 leading-[1.1]"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            Discover the narrative.
+          </motion.h1>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
+            className="text-lg md:text-xl text-neutral-400 font-light tracking-wide max-w-xl text-center"
+          >
+            One curated insight from today&apos;s trends, distilled by Gemini AI.<br />
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 text-xs font-mono font-medium tracking-widest text-neutral-400 uppercase">
+              <span className="flex items-center gap-2 bg-white/5 py-1.5 px-3 rounded-lg border border-white/10 shadow-inner">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> LOCAL: Indonesia
+              </span>
+              <span className="hidden sm:block text-neutral-600">/</span>
+              <span className="flex items-center gap-2 bg-white/5 py-1.5 px-3 rounded-lg border border-white/10 shadow-inner">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span> GLOBAL: Worldwide
+              </span>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Action Controls */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+          className="flex flex-col items-center gap-6"
+        >
+          {/* Region Toggle (Animated) */}
+          <div className="relative flex bg-black/40 border border-white/10 p-1.5 rounded-full backdrop-blur-xl shadow-inner">
+            {/* Sliding Background */}
+            <motion.div
+              layout
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              className="absolute top-1.5 bottom-1.5 w-[100px] bg-white/15 rounded-full shadow-lg border border-white/5"
+              initial={false}
+              animate={{
+                x: region === 'local' ? 0 : 100,
+              }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+            <button
+              onClick={() => setRegion('local')}
+              className={`relative z-10 w-[100px] py-2.5 rounded-full text-xs font-semibold tracking-widest uppercase transition-colors duration-300 ${region === 'local' ? 'text-white' : 'text-neutral-500 hover:text-white/80'}`}
+            >
+              Local
+            </button>
+            <button
+              onClick={() => setRegion('global')}
+              className={`relative z-10 w-[100px] py-2.5 rounded-full text-xs font-semibold tracking-widest uppercase transition-colors duration-300 ${region === 'global' ? 'text-white' : 'text-neutral-500 hover:text-white/80'}`}
+            >
+              Global
+            </button>
+          </div>
+
+          <div className="relative group mt-2">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/30 to-purple-500/30 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
+            <button
+              onClick={fetchViralNews}
+              disabled={loading}
+              className={`
+              relative flex items-center gap-3 px-8 py-4 rounded-full border
+              transition-all duration-300 font-medium text-sm tracking-widest uppercase overflow-hidden
+              ${loading
+                  ? "border-white/10 bg-white/5 text-neutral-500 cursor-not-allowed"
+                  : "border-white/20 bg-black/50 backdrop-blur-xl hover:bg-white/10 text-white hover:border-white/40 shadow-xl"
+                }
+            `}
+            >
+              {loading ? (
+                <span className="flex items-center gap-3">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white/50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing
+                </span>
+              ) : "Extract Insight"}
+
+              {/* Shimmer effect */}
+              {!loading && <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />}
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Content Display Area */}
+        <div className="w-full relative mt-4">
+          <AnimatePresence mode="popLayout">
+            {error ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, y: 10, filter: "blur(5px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -10, filter: "blur(5px)" }}
+                transition={{ duration: 0.4 }}
+                className="p-6 border border-red-500/20 bg-red-500/5 backdrop-blur-md rounded-2xl text-red-200/90 text-sm text-center max-w-md mx-auto"
+              >
+                <p className="font-medium tracking-wide uppercase text-xs mb-2 text-red-400">System Error</p>
+                {error}
+              </motion.div>
+            ) : news ? (
+              <motion.div
+                key={news.title}
+                initial={{ opacity: 0, y: 30, filter: "blur(10px)", scale: 0.95 }}
+                animate={{
+                  opacity: loading ? 0.3 : 1,
+                  y: 0,
+                  filter: loading ? "blur(8px)" : "blur(0px)",
+                  scale: loading ? 0.98 : 1
+                }}
+                exit={{ opacity: 0, y: -20, filter: "blur(10px)", scale: 0.95 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="relative w-full overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-2xl p-8 sm:p-10 shadow-2xl shadow-black/50 group"
+              >
+                {/* Subtle top glare */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
+
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white leading-tight mb-6">
+                  {news.title}
+                </h2>
+
+                <p className="text-lg sm:text-xl text-neutral-300 leading-relaxed font-light mb-8">
+                  {news.summary}
+                </p>
+
+                <div className="flex items-center justify-between border-t border-white/5 pt-6 mt-2">
+                  <a
+                    href={news.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white transition-colors flex items-center gap-2"
+                  >
+                    View Original Source
+                    <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </a>
+                  <span className="text-[10px] text-neutral-600 uppercase tracking-widest font-mono">Gemini Insight</span>
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
