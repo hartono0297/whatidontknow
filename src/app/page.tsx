@@ -17,6 +17,7 @@ type NewsData = {
   content: string;
   key_points: string[];
   source_url: string;
+  image_url?: string;
 };
 
 export default function Home() {
@@ -63,7 +64,7 @@ export default function Home() {
         <div className="flex items-center gap-2">
           {/* Minimalist Logo */}
           <div className="w-2 h-2 bg-white rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
-          <span className="text-xl font-medium tracking-tighter text-white">pulse.</span>
+          <span className="text-xl font-medium tracking-tighter text-white">whatidontknow</span>
         </div>
         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 backdrop-blur-md">
           <div className="w-2 h-2 bg-emerald-400 rounded-full" />
@@ -198,7 +199,7 @@ export default function Home() {
                 {/* Subtle top glare */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
 
-                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white leading-tight mb-4">
+                <h2 className="text-2xl sm:text-4xl font-serif font-semibold tracking-tight text-white leading-tight mb-4">
                   {news.title}
                 </h2>
 
@@ -222,8 +223,26 @@ export default function Home() {
                   )}
                 </div>
 
+                {news.image_url && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="w-full relative rounded-2xl overflow-hidden mb-8 border border-white/10 aspect-video bg-white/5 flex items-center justify-center group/image"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={news.image_url}
+                      alt={news.title}
+                      className="w-full h-full object-cover opacity-80 group-hover/image:opacity-100 group-hover/image:scale-105 transition-all duration-700 ease-out"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-50" />
+                    <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl pointer-events-none" />
+                  </motion.div>
+                )}
+
                 <div
-                  className="text-lg sm:text-xl text-neutral-300 leading-relaxed font-light mb-8 [&>p]:mb-6 last:[&>p]:mb-0 [&_strong]:text-neutral-100 [&_strong]:font-semibold [&_strong]:bg-white/5 [&_strong]:px-1.5 [&_strong]:py-0.5 [&_strong]:rounded-md [&_strong]:border [&_strong]:border-white/10"
+                  className="text-base sm:text-xl font-serif text-neutral-200 leading-relaxed font-normal mb-8 [&>p]:mb-6 last:[&>p]:mb-0 [&_strong]:text-white [&_strong]:font-semibold [&_strong]:bg-white/5 [&_strong]:px-1.5 [&_strong]:py-0.5 [&_strong]:rounded-md [&_strong]:border [&_strong]:border-white/10"
                   dangerouslySetInnerHTML={{ __html: news.content }}
                 />
 
@@ -238,7 +257,7 @@ export default function Home() {
                         <li key={idx} className="flex items-start gap-4 text-neutral-400 text-sm sm:text-base">
                           <span className="text-emerald-400/50 font-mono text-xs mt-1 shrink-0">{String(idx + 1).padStart(2, '0')}</span>
                           <span
-                            className="leading-relaxed [&_strong]:text-neutral-100 [&_strong]:font-semibold [&_strong]:bg-white/5 [&_strong]:px-1.5 [&_strong]:py-0.5 [&_strong]:rounded-md [&_strong]:border [&_strong]:border-white/10"
+                            className="leading-relaxed font-serif text-neutral-300 [&_strong]:text-white [&_strong]:font-semibold [&_strong]:bg-white/5 [&_strong]:px-1.5 [&_strong]:py-0.5 [&_strong]:rounded-md [&_strong]:border [&_strong]:border-white/10"
                             dangerouslySetInnerHTML={{ __html: point }}
                           />
                         </li>

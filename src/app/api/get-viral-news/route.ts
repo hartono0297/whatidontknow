@@ -3,7 +3,14 @@ import Parser from "rss-parser";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Initialize RSS Parser
-const parser = new Parser();
+const parser = new Parser({
+    customFields: {
+        item: [
+            ['media:content', 'mediaContent', { keepArray: true }],
+            ['media:thumbnail', 'mediaThumbnail', { keepArray: true }]
+        ]
+    }
+});
 
 // Initialize Gemini Pro
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -37,11 +44,17 @@ export async function GET(request: Request) {
         const pubDate = selectedTrend.pubDate || new Date().toISOString();
         const sourceName = region === 'global' ? "BBC News" : "CNN Indonesia";
 
+        // Extract Image URL if available
+        const enclosureUrl = selectedTrend.enclosure?.url;
+        const mediaContentUrl = selectedTrend.mediaContent?.[0]?.$?.url;
+        const mediaThumbnailUrl = selectedTrend.mediaThumbnail?.[0]?.$?.url;
+        const imageUrl = enclosureUrl || mediaContentUrl || mediaThumbnailUrl || null;
+
         // 3. Prepare AI Prompt based on Region
         const isGlobal = region === 'global';
         const languageContext = isGlobal
-            ? "You are a viral news curator for Gen-Z. Rewrite the following news into an engaging, highly readable, and detailed narrative. Provide a comprehensive summary of the event (2-3 paragraphs). Wrap paragraphs in HTML <p> tags and highlight important or interesting words/phrases using <strong> tags. Output the formatted summary as 'content', and extract 3-4 key takeaways as a list in 'key_points'. Use a casual, punchy style. IMPORTANT: Do not use ANY emojis at all because the website theme is modern and minimalist. Language MUST be in English."
-            : "Kamu adalah kurator berita viral untuk Gen-Z. Ubah berita berikut menjadi narasi panjang yang detail, seru, gaul, dan sangat mudah dibaca. Berikan ringkasan komprehensif dari peristiwa tersebut (2-3 paragraf). Bungkus setiap paragraf dengan tag HTML <p> dan highlight kata atau frasa penting/menarik menggunakan tag <strong>. Output ringkasan berformat ini sebagai 'content', dan ekstrak 3-4 poin penting sebagai daftar di 'key_points'. Gunakan sapaan santai. PENTING: Jangan gunakan emoji APAPUN karena tema website sekarang adalah modern dan minimalis. Bahasa HARUS dalam Bahasa Indonesia.";
+            ? "You are a professional news curator. Rewrite the following news into a clear, detailed, and easily understood narrative suitable for all audiences. Provide a comprehensive summary of the event (2-3 paragraphs). Wrap paragraphs in HTML <p> tags and highlight important or interesting words/phrases using <strong> tags. Output the formatted summary as 'content', and extract 3-4 key takeaways as a list in 'key_points'. Use a polite, well-structured style. IMPORTANT: Do not use ANY emojis at all because the website theme is modern and minimalist. Language MUST be in English."
+            : "Kamu adalah kurator berita profesional. Ubah berita berikut menjadi narasi yang terstruktur dengan baik, rapi, dan bahasanya mudah dipahami oleh semua kalangan (hindari bahasa gaul atau slang). Berikan ringkasan komprehensif dari peristiwa tersebut (2-3 paragraf). Bungkus setiap paragraf dengan tag HTML <p> dan highlight kata atau frasa penting/menarik menggunakan tag <strong>. Output ringkasan berformat ini sebagai 'content', dan ekstrak 3-4 poin penting sebagai daftar di 'key_points'. Gunakan sapaan formal tapi santai. PENTING: Jangan gunakan emoji APAPUN karena tema website sekarang adalah modern dan minimalis. Bahasa HARUS dalam Bahasa Indonesia.";
 
         const prompt = `
         ${languageContext}
@@ -72,23 +85,33 @@ export async function GET(request: Request) {
         // 5. Parse JSON (strip out possible markdown blocks from Gemini)
         let jsonResponse;
         try {
-            const cleanJsonStr = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-            jsonResponse = JSON.parse(cleanJsonStr);
+            // Force extract substring containing valid JSON arrays or objects
+            const textMatch = responseText.match(/{(?:[^{}]|{(?:[^{}]|{(?:[^{}]|{[^{}]*})*})*})*}/);
+
+            if (textMatch) {
+                jsonResponse = JSON.parse(textMatch[0]);
+            } else {
+                throw new Error("No valid JSON found in response");
+            }
 
             // Safety net to ensure we actually return the parsed trend's original URL if AI hallucinates it
             if (!jsonResponse.source_url || jsonResponse.source_url === "URL asli yang valid") {
                 jsonResponse.source_url = link;
             }
+
+            // Inject the extracted image URL directly
+            jsonResponse.image_url = imageUrl;
         } catch (parseError) {
             console.error("Error parsing Gemini JSON output:", parseError, responseText);
             // Fallback
             jsonResponse = {
-                title: `🔥 Lagi Rame: ${title}`,
+                title: `Berita Terkini: ${title}`,
                 publish_date: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
                 source_name: sourceName,
-                content: `<p>Ini nih yang lagi anget-angetnya dibahas netizen. Langsung aja baca selengkapnya biar nggak ketinggalan berita terbaru yang lagi <strong>viral banget</strong>.</p>`,
-                key_points: [`Berita: ${title}`, `Silakan klik sumber untuk membaca lebih detail.`],
+                content: `<p>Berikut adalah informasi terbaru yang sedang hangat diperbincangkan. Silakan baca selengkapnya untuk mendapatkan informasi yang <strong>komprehensif</strong>.</p>`,
+                key_points: [`Informasi: ${title}`, `Silakan klik sumber untuk membaca lebih detail.`],
                 source_url: link,
+                image_url: imageUrl,
             };
         }
 
@@ -96,11 +119,11 @@ export async function GET(request: Request) {
     } catch (error) {
         console.error("API Error:", error);
         return NextResponse.json({
-            title: "🔥 Server Lagi Pusing",
+            title: "Gangguan Sistem",
             publish_date: new Date().toLocaleDateString('id-ID'),
             source_name: "System",
-            content: "<p>Waduh, koneksi ke pusat trend lagi nyangkut nih. Bentar ya, lagi di-reset modemnya biar bisa ditarik lagi gosip <strong>terbarunya</strong>!</p>",
-            key_points: ["Server timeout", "Coba klik Extract Insight lagi beberapa saat lagi"],
+            content: "<p>Mohon maaf, saat ini sistem sedang memulihkan koneksi ke sumber berita. Silakan tunggu beberapa saat untuk mendapatkan <strong>pembaruan</strong>.</p>",
+            key_points: ["Koneksi terputus", "Silakan coba tekan tombol Extract Insight kembali nanti"],
             source_url: "#"
         }, { status: 500 });
     }

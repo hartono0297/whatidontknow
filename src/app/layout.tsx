@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "pulse.",
+  title: "whatidontknow",
   description: "Curated insights from today's trends, distilled by Gemini AI.",
 };
 
