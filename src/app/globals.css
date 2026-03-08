@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
@@ -40,6 +41,7 @@ body::before {
   z-index: -1;
   pointer-events: none;
 }
+
 .dark body::before {
   background:
     radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.05), transparent 25%),
@@ -50,6 +52,7 @@ body::before {
   background: rgba(0, 0, 0, 0.15);
   color: inherit;
 }
+
 .dark ::selection {
   background: rgba(255, 255, 255, 0.15);
   color: white;
