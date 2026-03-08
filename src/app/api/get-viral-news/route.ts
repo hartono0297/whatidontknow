@@ -21,16 +21,28 @@ export async function GET(request: Request) {
         const region = searchParams.get('region') || 'local';
 
         // 1. Fetch Trending News RSS based on region
-        let feedUrl = "https://www.cnnindonesia.com/nasional/rss"; // Default to local
+        const localSources = [
+            { url: "https://www.cnnindonesia.com/nasional/rss", name: "CNN Indonesia" },
+            { url: "https://www.antaranews.com/rss/terkini.xml", name: "Antara News" },
+            { url: "https://www.cnbcindonesia.com/news/rss", name: "CNBC Indonesia" },
+            { url: "https://www.republika.co.id/rss", name: "Republika" }
+        ];
 
-        if (region === 'global') {
-            feedUrl = "http://feeds.bbci.co.uk/news/world/rss.xml";
-        }
+        const globalSources = [
+            { url: "http://feeds.bbci.co.uk/news/world/rss.xml", name: "BBC News" },
+            { url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", name: "The New York Times" },
+            { url: "https://www.aljazeera.com/xml/rss/all.xml", name: "Al Jazeera" }
+        ];
+
+        const sources = region === 'global' ? globalSources : localSources;
+        const randomSource = sources[Math.floor(Math.random() * sources.length)];
+        const feedUrl = randomSource.url;
+        const regionSourceName = randomSource.name;
 
         const feed = await parser.parseURL(feedUrl);
 
         if (!feed.items || feed.items.length === 0) {
-            return NextResponse.json({ error: "No trending topics found" }, { status: 404 });
+            return NextResponse.json({ error: "No trending topics found in " + regionSourceName }, { status: 404 });
         }
 
         // 2. Randomly select one trending item
@@ -42,7 +54,7 @@ export async function GET(request: Request) {
         const link = selectedTrend.link || "#";
         const content = selectedTrend.contentSnippet || selectedTrend.content || "No details available.";
         const pubDate = selectedTrend.pubDate || new Date().toISOString();
-        const sourceName = region === 'global' ? "BBC News" : "CNN Indonesia";
+        const sourceName = regionSourceName;
 
         // Extract Image URL if available
         const enclosureUrl = selectedTrend.enclosure?.url;
