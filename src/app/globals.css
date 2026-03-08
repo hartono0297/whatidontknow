@@ -7,6 +7,11 @@
 }
 
 :root {
+  --background: #fafafa;
+  --foreground: #050505;
+}
+
+.dark {
   --background: #050505;
   --foreground: #ffffff;
 }
@@ -17,6 +22,7 @@ body {
   font-family: var(--font-sans), sans-serif;
   letter-spacing: -0.01em;
   position: relative;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 /* Premium gradient mesh background */
@@ -27,14 +33,24 @@ body::before {
   left: 0;
   width: 100vw;
   height: 100vh;
+  /* Adjust colors based on theme, fallback via opacity tweaking or specific classes */
   background:
-    radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.05), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05), transparent 25%);
+    radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
   z-index: -1;
   pointer-events: none;
 }
+.dark body::before {
+  background:
+    radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.05), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05), transparent 25%);
+}
 
 ::selection {
+  background: rgba(0, 0, 0, 0.15);
+  color: inherit;
+}
+.dark ::selection {
   background: rgba(255, 255, 255, 0.15);
   color: white;
 }
